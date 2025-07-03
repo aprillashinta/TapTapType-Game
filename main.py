@@ -1,12 +1,9 @@
-import pygame
-import random
-import sys
-import os
+import pygame, random, sys, os
 
 pygame.init()
 lebar, tinggi = 360, 640
 layar = pygame.display.set_mode((lebar, tinggi))
-pygame.display.set_caption("ZType - Mobile Edition")
+pygame.display.set_caption("TapTapType")
 clock = pygame.time.Clock()
 
 font_kecil = pygame.font.Font(None, 28)
@@ -32,7 +29,7 @@ sound_type = pygame.mixer.Sound("sound/tik.mp3")
 
 kata_list = [
     'python', 'java', 'kotlin', 'dart', 'swift', 'go', 'ruby', 'rust',
-    'php', 'html', 'css', 'sql', 'bash', 'c', 'csharp', 'perl'
+    'php', 'html', 'css', 'sql', 'bash', 'c', 'perl'
 ]
 
 def load_highscore():
@@ -108,7 +105,7 @@ def start_screen():
     while True:
         clock.tick(60)
         draw_background()
-        tampilkan_teks("ZTYPE", font_besar, KUNING, -150)
+        tampilkan_teks("TapTapType", font_besar, KUNING, -150)
         tampilkan_teks("Programming Edition", font_kecil, BIRU, -100)
         tampilkan_teks("Tap icon to start", font_kecil, PUTIH, -50)
 
@@ -193,10 +190,15 @@ while True:
         sekarang = pygame.time.get_ticks()
 
         if freeze_aktif:
-            if sekarang - freeze_timer < 3000:
-                tampilkan_teks("FREEZE BONUS!", font_sedang, BIRU, 150)
-            else:
+            waktu_berjalan = sekarang - freeze_timer
+            sisa_waktu = max(0, 3 - waktu_berjalan // 1000)  # Hitung sisa waktu dalam detik
+
+            tampilkan_teks("FREEZE BONUS!", font_sedang, BIRU, 130)
+            tampilkan_teks(f"{sisa_waktu}", font_besar, KUNING, 180)
+
+            if waktu_berjalan >= 3000:
                 freeze_aktif = False
+
         else:
             if sekarang - spawn_timer > spawn_delay:
                 musuh_list.append(Musuh(skor))
