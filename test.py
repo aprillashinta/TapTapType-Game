@@ -6,12 +6,10 @@ layar = pygame.display.set_mode((lebar, tinggi))
 pygame.display.set_caption("TapTapType")
 clock = pygame.time.Clock()
 
-# Font
 font_kecil = pygame.font.Font("font/Poppins-Regular.ttf", 16)
 font_sedang = pygame.font.Font("font/Poppins-SemiBold.ttf", 22)
 font_besar = pygame.font.Font("font/Poppins-Bold.ttf", 36)
 
-# Warna
 PUTIH = (255, 255, 255)
 MERAH = (255, 70, 70)
 BIRU = (100, 200, 255)
@@ -19,17 +17,12 @@ KUNING = (255, 255, 100)
 ABU = (30, 30, 40)
 CREAM = (255, 245, 220)
 
-# Asset
-start_icon = pygame.transform.scale(pygame.image.load("icon/start_icon.png"), (80, 80))
-restart_icon = pygame.transform.scale(pygame.image.load("icon/restart_icon.png"), (50, 50))
-player_img_raw = pygame.transform.scale(pygame.image.load("icon/player.png"), (40, 40))
-home_icon = pygame.transform.scale(pygame.image.load("icon/home_icon.png"), (58, 58))
+start_icon = pygame.image.load("icon/start_icon.png")
+start_icon = pygame.transform.scale(start_icon, (80, 80))
+restart_icon = pygame.image.load("icon/restart_icon.png")
+restart_icon = pygame.transform.scale(restart_icon, (50, 50))
 
-# Sound
 pygame.mixer.init()
-pygame.mixer.music.load("sound/bekson.mp3")  # BACKSOUND
-pygame.mixer.music.set_volume(0.4)
-
 sound_start = pygame.mixer.Sound("sound/start.wav")
 sound_success = pygame.mixer.Sound("sound/success.wav")
 sound_gameover = pygame.mixer.Sound("sound/gameover.wav")
@@ -48,7 +41,8 @@ def load_highscore():
     return 0
 
 def simpan_highscore(skor_baru):
-    if skor_baru > load_highscore():
+    highscore = load_highscore()
+    if skor_baru > highscore:
         with open("highscore.txt", "w") as f:
             f.write(str(skor_baru))
 
@@ -70,22 +64,6 @@ class Bintang:
 
 bintang_list = [Bintang() for _ in range(60)]
 
-class Player:
-    def __init__(self):
-        self.x = lebar // 2
-        self.y = tinggi - 50
-        self.angle = 0
-
-    def update_angle(self, target_x, target_y):
-        dx = target_x - self.x
-        dy = target_y - self.y
-        self.angle = math.degrees(math.atan2(-dy, dx)) - 90
-
-    def draw(self):
-        rotated_img = pygame.transform.rotate(player_img_raw, self.angle)
-        rect = rotated_img.get_rect(center=(self.x, self.y))
-        layar.blit(rotated_img, rect)
-
 class Musuh:
     def __init__(self, skor, mode):
         self.kata = random.choice(kata_list)
@@ -106,26 +84,19 @@ class Musuh:
         layar.blit(teks, (self.x, self.y))
 
 class Peluru:
-    def __init__(self, x, y, target_x, target_y):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        angle = math.atan2(target_y - y, target_x - x)
-        self.vx = 6 * math.cos(angle)
-        self.vy = 6 * math.sin(angle)
         self.aktif = True
         sound_shoot.play()
 
     def update(self):
-        self.x += self.vx
-        self.y += self.vy
-        if self.x < 0 or self.x > lebar or self.y < 0 or self.y > tinggi:
+        self.y -= 6
+        if self.y < 0:
             self.aktif = False
 
     def draw(self):
-        panjang = 10
-        akhir_x = self.x + (self.vx / math.hypot(self.vx, self.vy)) * panjang
-        akhir_y = self.y + (self.vy / math.hypot(self.vx, self.vy)) * panjang
-        pygame.draw.line(layar, BIRU, (self.x, self.y), (akhir_x, akhir_y), 2)
+        pygame.draw.line(layar, BIRU, (self.x, self.y), (self.x, self.y - 10), 2)
 
 class Ledakan:
     def __init__(self, x, y):
@@ -185,19 +156,22 @@ def animate_icon_click(icon, pos):
         pygame.time.delay(80)
 
 def start_screen():
-    pygame.mixer.music.play(-1)  # MULAI BACKSOUND
     mode_list = ["Easy", "Normal", "Expert"]
     index = 0
+
     while True:
         clock.tick(60)
         draw_background()
+
         tampilkan_teks_dengan_bayangan("TapTapType", font_besar, KUNING, -150)
         tampilkan_teks_dengan_bayangan("Programming Edition", font_kecil, BIRU, -100)
+
         mode_teks = f"< {mode_list[index]} >"
         tampilkan_teks_dengan_bayangan(mode_teks, font_sedang, PUTIH, -40)
 
         icon_rect = start_icon.get_rect(center=(lebar // 2, tinggi // 2 + 60))
         layar.blit(start_icon, icon_rect)
+
         mouse = pygame.mouse.get_pos()
         klik = pygame.mouse.get_pressed()
 
@@ -219,100 +193,25 @@ def start_screen():
 
         pygame.display.update()
 
-def game_over_screen(skor, highscore, accuracy, wpm):
-    pygame.mixer.music.stop()  # STOP BACKSOUND
-    while True:
-        clock.tick(60)
-        draw_background()
-        tampilkan_teks_dengan_bayangan("GAME OVER", font_besar, MERAH, -160)
-        tampilkan_teks_dengan_bayangan(f"Final Score: {skor}", font_sedang, PUTIH, -80)
-        tampilkan_teks_dengan_bayangan(f"Best Score: {highscore}", font_kecil, KUNING, -40)
-        tampilkan_teks_dengan_bayangan(f"Accuracy: {accuracy:.1f}%", font_kecil, BIRU, 10)
-        tampilkan_teks_dengan_bayangan(f"WPM: {wpm:.1f}", font_kecil, BIRU, 40)
+mode = start_screen()
 
-        jarak = (restart_icon.get_width() // 2) + (home_icon.get_width() // 2) + 20
-        restart_rect = restart_icon.get_rect(center=(lebar // 2 - jarak // 2, tinggi // 2 + 120))
-        home_rect = home_icon.get_rect(center=(lebar // 2 + jarak // 2, tinggi // 2 + 120))
-
-        layar.blit(restart_icon, restart_rect)
-        layar.blit(home_icon, home_rect)
-
-        mouse = pygame.mouse.get_pos()
-        klik = pygame.mouse.get_pressed()
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-
-        if restart_rect.collidepoint(mouse) and klik[0]:
-            animate_icon_click(restart_icon, restart_rect.center)
-            return "restart"
-
-        if home_rect.collidepoint(mouse) and klik[0]:
-            animate_icon_click(home_icon, home_rect.center)
-            return "home"
-
-        pygame.display.update()
-
-def pause_menu():
-    while True:
-        clock.tick(60)
-        draw_background()
-        tampilkan_teks_dengan_bayangan("Game Dihentikan", font_kecil, PUTIH, -220)
-
-        popup_rect = pygame.Rect(40, 180, lebar - 80, 280)
-        pygame.draw.rect(layar, (20, 20, 30, 180), popup_rect, border_radius=16)
-        pygame.draw.rect(layar, ABU, popup_rect, border_radius=16)
-
-        teks_pause = font_besar.render("PAUSED", True, KUNING)
-        teks_rect = teks_pause.get_rect(center=(lebar // 2, 220))
-        layar.blit(teks_pause, teks_rect)
-
-        resume_rect = restart_icon.get_rect(center=(lebar // 2 - 60, 320))
-        home_rect = home_icon.get_rect(center=(lebar // 2 + 60, 320))
-
-        layar.blit(restart_icon, resume_rect)
-        layar.blit(home_icon, home_rect)
-
-        teks_resume = font_kecil.render("Resume", True, PUTIH)
-        teks_home = font_kecil.render("Home", True, PUTIH)
-        layar.blit(teks_resume, teks_resume.get_rect(center=(resume_rect.centerx, resume_rect.bottom + 15)))
-        layar.blit(teks_home, teks_home.get_rect(center=(home_rect.centerx, home_rect.bottom + 15)))
-
-        mouse = pygame.mouse.get_pos()
-        klik = pygame.mouse.get_pressed()
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-
-        if resume_rect.collidepoint(mouse) and klik[0]:
-            animate_icon_click(restart_icon, resume_rect.center)
-            return "resume"
-        elif home_rect.collidepoint(mouse) and klik[0]:
-            animate_icon_click(home_icon, home_rect.center)
-            pygame.mixer.music.stop()  # STOP BACKSOUND JUGA
-            return "home"
-
-        pygame.display.update()
-
-def main_game(mode):
-    musuh_list, peluru_list, ledakan_list = [], [], []
-    skor, nyawa, game_over = 0, 3, False
-    spawn_timer, spawn_delay = 0, 1200
+while True:
+    musuh_list = []
+    peluru_list = []
+    ledakan_list = []
+    skor = 0
+    game_over = False
+    spawn_timer = 0
+    spawn_delay = 1200
     highscore = load_highscore()
-    freeze_aktif, freeze_timer = False, 0
-    player = Player()
-    jumlah_tekanan = 0
-    jumlah_huruf_benar = 0
-    waktu_mulai = pygame.time.get_ticks()
+    freeze_aktif = False
+    freeze_timer = 0
+    nyawa = 3
 
     while not game_over:
         clock.tick(60)
         draw_background()
-        player.draw()
+
         sekarang = pygame.time.get_ticks()
 
         if skor > 0 and skor % 10 == 0 and not freeze_aktif:
@@ -321,14 +220,18 @@ def main_game(mode):
 
         if freeze_aktif:
             waktu_berjalan = sekarang - freeze_timer
+            sisa_waktu = max(0, 3 - waktu_berjalan // 1000)
             tampilkan_teks_dengan_bayangan("FREEZE BONUS!", font_sedang, BIRU, 130)
-            tampilkan_teks_dengan_bayangan(f"{max(0, 3 - waktu_berjalan // 1000)}", font_besar, KUNING, 180)
+            tampilkan_teks_dengan_bayangan(f"{sisa_waktu}", font_besar, KUNING, 180)
+
             if waktu_berjalan >= 3000:
                 freeze_aktif = False
+
         else:
             if sekarang - spawn_timer > spawn_delay:
                 musuh_list.append(Musuh(skor, mode))
                 spawn_timer = sekarang
+
             for musuh in musuh_list:
                 if musuh.aktif:
                     musuh.update()
@@ -343,26 +246,22 @@ def main_game(mode):
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    hasil = pause_menu()
-                    if hasil == "home":
-                        return "home"
-                else:
+                if musuh_list:
                     huruf = event.unicode.lower()
-                    jumlah_tekanan += 1
                     for musuh in musuh_list:
                         if musuh.aktif and musuh.kata.startswith(huruf):
-                            jumlah_huruf_benar += 1
-                            player.update_angle(musuh.x, musuh.y)
-                            peluru_list.append(Peluru(player.x, player.y - 20, musuh.x, musuh.y))
-                            panjang = len(musuh.kata)
+                            peluru_list.append(Peluru(musuh.x + 20, musuh.y + 15))
+                            panjang_kata = len(musuh.kata)
                             musuh.kata = musuh.kata[1:]
                             sound_type.play()
                             if musuh.kata == "":
                                 sound_success.play()
                                 ledakan_list.append(Ledakan(musuh.x + 20, musuh.y + 15))
                                 musuh.aktif = False
-                                skor += 5 + panjang if freeze_aktif else panjang
+                                if freeze_aktif:
+                                    skor += 5 + panjang_kata
+                                else:
+                                    skor += panjang_kata
                             break
 
         for peluru in peluru_list[:]:
@@ -373,8 +272,10 @@ def main_game(mode):
         for musuh in musuh_list:
             if musuh.aktif:
                 musuh.draw()
+
         for peluru in peluru_list:
             peluru.draw()
+
         for ledakan in ledakan_list[:]:
             ledakan.update()
             ledakan.draw()
@@ -384,20 +285,58 @@ def main_game(mode):
         tampilkan_teks_dengan_bayangan(f"Score: {skor}", font_kecil, KUNING, -280)
         tampilkan_teks_dengan_bayangan(f"Best: {highscore}", font_kecil, PUTIH, -250)
         tampilkan_nyawa_hex(nyawa)
+
         pygame.display.update()
 
-    durasi = (pygame.time.get_ticks() - waktu_mulai) / 1000
-    wpm = (jumlah_huruf_benar / 5) / (durasi / 60) if durasi > 0 else 0
-    accuracy = (jumlah_huruf_benar / jumlah_tekanan) * 100 if jumlah_tekanan > 0 else 0
     simpan_highscore(skor)
+    highscore = max(skor, highscore)
+
     sound_gameover.play()
-    return game_over_screen(skor, max(skor, highscore), accuracy, wpm)
+    alpha = 0
+    fade_in_speed = 5
+    accuracy = 100
+    wpm = skor * 2
 
+    overlay = pygame.Surface((lebar, tinggi), pygame.SRCALPHA)
 
-# Loop utama
-while True:
-    mode = start_screen()
     while True:
-        hasil = main_game(mode)
-        if hasil == "home":
-            break  # kembali ke start screen
+        clock.tick(60)
+        draw_background()
+
+        overlay.fill((0, 0, 0, 180))
+        layar.blit(overlay, (0, 0))
+
+        if alpha < 255:
+            alpha += fade_in_speed
+        else:
+            alpha = 255
+
+        teks = font_besar.render("GAME OVER", True, MERAH)
+        bayangan = font_besar.render("GAME OVER", True, (0, 0, 0))
+        layar.blit(bayangan, (lebar//2 - teks.get_width()//2 + 2, tinggi//2 - 120 + 2))
+        layar.blit(teks, (lebar//2 - teks.get_width()//2, tinggi//2 - 120))
+
+        tampilkan_teks_dengan_bayangan(f"Final Score: {skor}", font_sedang, KUNING, -50, alpha)
+        tampilkan_teks_dengan_bayangan(f"Best Score: {highscore}", font_kecil, PUTIH, -15, alpha)
+        tampilkan_teks_dengan_bayangan(f"Accuracy: {accuracy}%", font_kecil, BIRU, 20, alpha)
+        tampilkan_teks_dengan_bayangan(f"WPM: {wpm}", font_kecil, BIRU, 50, alpha)
+        tampilkan_teks_dengan_bayangan("Tap to restart", font_kecil, PUTIH, 100, alpha)
+
+        icon_rect = restart_icon.get_rect(center=(lebar // 2, tinggi // 2 + 160))
+        restart_icon.set_alpha(alpha)
+        layar.blit(restart_icon, icon_rect)
+
+        mouse = pygame.mouse.get_pos()
+        klik = pygame.mouse.get_pressed()
+
+        if icon_rect.collidepoint(mouse) and klik[0] and alpha >= 255:
+            animate_icon_click(restart_icon, icon_rect.center)
+            pygame.time.wait(200)
+            break
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        pygame.display.update()
